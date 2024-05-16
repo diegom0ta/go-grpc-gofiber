@@ -10,9 +10,17 @@ import (
 	"sync"
 	"syscall"
 
+	db "github.com/diegom0ta/go-grpc-gofiber/internal/database"
+	"github.com/diegom0ta/go-grpc-gofiber/internal/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"gorm.io/gorm"
 )
+
+type server struct {
+	pb.UnimplementedUserServiceServer
+	db *gorm.DB
+}
 
 var (
 	port = 1531
@@ -28,9 +36,11 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
+	db.Connect()
+
 	s := grpc.NewServer()
 
-	pb.RegisterUserServer(s, &user.Server{})
+	pb.RegisterUserServiceServer(s, &server{db: db.Db})
 
 	reflection.Register(s)
 
@@ -43,6 +53,7 @@ func main() {
 		sig := <-sigCh
 		log.Printf("got signal %v, attempting graceful shutdown", sig)
 		cancel()
+		db.Disconnect()
 		s.GracefulStop()
 
 		wg.Done()
