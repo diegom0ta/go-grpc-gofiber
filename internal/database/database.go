@@ -10,12 +10,15 @@ import (
 	"gorm.io/gorm"
 )
 
-var Db *gorm.DB
+var (
+	Db  *gorm.DB
+	cfg config.DbConfig
+)
 
 func Connect() {
 	var err error
 
-	Db, err = gorm.Open(postgres.Open(config.LoadDB()), &gorm.Config{})
+	Db, err = gorm.Open(postgres.Open(cfg.LoadDB()), &gorm.Config{})
 	if err != nil {
 		log.Printf("error connecting to database: %v", err)
 	}

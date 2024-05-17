@@ -1,8 +1,10 @@
 package config
 
-var dbCfg string
+type DbConfig struct {
+	dbCfg string
+}
 
-func LoadDB() string {
-	dbCfg = "host=localhost user=postgres password=postgres dbname=server port=5433 sslmode=disable"
-	return dbCfg
+func (dbcfg DbConfig) LoadDB() string {
+	dbcfg.dbCfg = "host=localhost user=postgres password=postgres dbname=myserver port=5433 sslmode=disable"
+	return dbcfg.dbCfg
 }

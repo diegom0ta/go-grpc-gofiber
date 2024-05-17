@@ -10,20 +10,21 @@ service UserService {
 }
 
 message CreateUserRequest {
-  string name = 1;
-  string email = 2;
+  string id = 1;
+  string name = 2;
+  string email = 3;
 }
 
 message CreateUserResponse {
-  int64 id = 1;
+  string id = 1;
 }
 
 message GetUserRequest {
-  int64 id = 1;
+  string email = 1;
 }
 
 message GetUserResponse {
-  int64 id = 1;
+  string id = 1;
   string name = 2;
   string email = 3;
 }

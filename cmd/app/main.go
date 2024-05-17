@@ -11,7 +11,9 @@ import (
 	"syscall"
 
 	db "github.com/diegom0ta/go-grpc-gofiber/internal/database"
+	"github.com/diegom0ta/go-grpc-gofiber/internal/models"
 	"github.com/diegom0ta/go-grpc-gofiber/internal/pb"
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"gorm.io/gorm"
@@ -66,4 +68,23 @@ func main() {
 
 	wg.Wait()
 	log.Println("clean shutdown")
+}
+
+func (s *server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
+	uuid := uuid.New()
+	user := models.User{ID: uuid.String(), Name: req.Name, Email: req.Email}
+	if err := s.db.Create(&user).Error; err != nil {
+		return nil, err
+	}
+
+	return &pb.CreateUserResponse{Id: user.ID}, nil
+}
+
+func (s *server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
+	var user models.User
+	if err := s.db.First(&user, req.Email).Error; err != nil {
+		return nil, err
+	}
+
+	return &pb.GetUserResponse{Id: user.ID, Name: user.Name, Email: user.Email}, nil
 }

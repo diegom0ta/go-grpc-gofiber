@@ -9,4 +9,4 @@ services:
       - 5433:5432
     environment:
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=server
+      - POSTGRES_DB=myserver
