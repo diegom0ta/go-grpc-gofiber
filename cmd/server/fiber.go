@@ -48,15 +48,19 @@ func main() {
 		return c.Status(fiber.StatusCreated).JSON(fiber.Map{"id": res.Id})
 	})
 
-	app.Get("/user", func(c *fiber.Ctx) error {
-		req := new(struct {
-			Email string `json:"email"`
-		})
-		if err := c.BodyParser(req); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cannot parse JSON"})
-		}
+	app.Get("/user/:id", func(c *fiber.Ctx) error {
+		// Get id from query
+		id := c.Params("id")
 
-		grpcReq := &pb.GetUserRequest{Email: req.Email}
+		// Get id from body
+		// req := new(struct {
+		// 	ID string `json:"id"`
+		// })
+		// if err := c.BodyParser(req); err != nil {
+		// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cannot parse JSON"})
+		// }
+
+		grpcReq := &pb.GetUserRequest{Id: id}
 		res, err := client.GetUser(context.Background(), grpcReq)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})

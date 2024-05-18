@@ -82,7 +82,7 @@ func (s *server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb
 
 func (s *server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
 	var user models.User
-	if err := s.db.First(&user, req.Email).Error; err != nil {
+	if err := s.db.First(&user).Where("id = ?", req.Id).Error; err != nil {
 		return nil, err
 	}
 
