@@ -3,7 +3,6 @@ module github.com/diegom0ta/go-grpc-gofiber
 go 1.22.1
 
 require (
-	github.com/diegom0ta/gofiber-study v0.0.0-20240424211033-c913781460a0
 	github.com/gofiber/fiber/v2 v2.52.4
 	github.com/google/uuid v1.6.0
 	google.golang.org/grpc v1.64.0
