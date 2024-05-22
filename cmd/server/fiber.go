@@ -1,79 +1,53 @@
 package main
 
 import (
-	"context"
+	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
-	"github.com/diegom0ta/go-grpc-gofiber/internal/pb"
-
+	"github.com/diegom0ta/go-grpc-gofiber/internal/http/client"
+	h "github.com/diegom0ta/go-grpc-gofiber/internal/http/handlers"
 	"github.com/gofiber/fiber/v2"
-	"google.golang.org/grpc"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 const (
 	grpcAddress = "localhost:1531"
+	port        = 8080
 )
 
 func main() {
-	// Connect to gRPC server
-	conn, err := grpc.NewClient(grpcAddress, grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("did not connect: %v", err)
-	}
-	defer conn.Close()
-	client := pb.NewUserServiceClient(conn)
+	client.Connect(grpcAddress)
 
-	// Create Fiber app
 	app := fiber.New()
 
-	// Define routes
-	app.Post("/user", func(c *fiber.Ctx) error {
-		req := new(struct {
-			Name  string `json:"name"`
-			Email string `json:"email"`
-		})
-		if err := c.BodyParser(req); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cannot parse JSON"})
+	app.Use(cors.New())
+
+	go func() {
+		if err := app.Listen(fmt.Sprintf(":%d", port)); err != nil {
+			log.Printf("Error listening server: %v", err)
 		}
+	}()
 
-		grpcReq := &pb.CreateUserRequest{
-			Name:  req.Name,
-			Email: req.Email,
-		}
-		res, err := client.CreateUser(context.Background(), grpcReq)
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-		}
-
-		return c.Status(fiber.StatusCreated).JSON(fiber.Map{"id": res.Id})
-	})
-
-	app.Get("/user/:id", func(c *fiber.Ctx) error {
-		// Get id from query
-		id := c.Params("id")
-
-		// Get id from body
-		// req := new(struct {
-		// 	ID string `json:"id"`
-		// })
-		// if err := c.BodyParser(req); err != nil {
-		// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cannot parse JSON"})
-		// }
-
-		grpcReq := &pb.GetUserRequest{Id: id}
-		res, err := client.GetUser(context.Background(), grpcReq)
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-		}
-
-		return c.JSON(fiber.Map{
-			"id":    res.Id,
-			"name":  res.Name,
-			"email": res.Email,
-		})
-	})
-
-	// Start Fiber app
 	log.Println("Fiber server is running on port :8080")
-	log.Fatal(app.Listen(":8080"))
+
+	app.Post("/user", h.Register)
+	app.Get("/user/:id", h.GetUser)
+
+	c := make(chan os.Signal, 1)
+
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	<-c
+
+	log.Println("Gracefully shutting down started...")
+
+	err := app.Shutdown()
+	if err != nil {
+		log.Printf("Error while shutting down: %v", err)
+	}
+
+	log.Println("Server closed")
 }
